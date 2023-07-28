@@ -5,7 +5,6 @@ import { Context } from '../context'
 const rules = {
   isAuthenticatedUser: rule()((_parent, _args, context: Context) => {
     const userId = getUserId(context)
-    console.log({ userId, valid: Boolean(userId) })
     return Boolean(userId)
   }),
   isPostOwner: rule()(async (_parent, args, context) => {
@@ -26,11 +25,14 @@ export const permissions = shield({
     me: rules.isAuthenticatedUser,
     draftsByUser: rules.isAuthenticatedUser,
     postById: rules.isAuthenticatedUser,
+    commentByAuthorId: rules.isAuthenticatedUser,
+    commentByPostId: rules.isAuthenticatedUser,
   },
   Mutation: {
     createDraft: rules.isAuthenticatedUser,
     deletePost: rules.isPostOwner,
     incrementPostViewCount: rules.isAuthenticatedUser,
     togglePublishPost: rules.isPostOwner,
+    createComment: rules.isAuthenticatedUser,
   },
 })

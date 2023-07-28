@@ -109,6 +109,30 @@ const Query = objectType({
           })
       },
     })
+
+    t.nullable.field('commentByAuthorId', {
+      type: 'Comment',
+      args: {
+        id: intArg(),
+      },
+      resolve: (_parent, args, context: Context) => {
+        return context.prisma.comment.findUnique({
+          where: { authorId: args.id || undefined },
+        })
+      },
+    })
+
+    t.nullable.field('commentByPostId', {
+      type: 'Comment',
+      args: {
+        id: intArg(),
+      },
+      resolve: (_parent, args, context: Context) => {
+        return context.prisma.comment.findUnique({
+          where: { postId: args.id || undefined },
+        })
+      },
+    })
   },
 })
 
@@ -243,6 +267,39 @@ const Mutation = objectType({
         })
       },
     })
+
+    t.field('createComment', {
+      type: 'Comment',
+      args: {
+        data: nonNull(
+          arg({
+            type: 'CommentCreateInput',
+          }),
+        ),
+      },
+      resolve: async (_, args, context: Context) => {
+        try {
+          const userId = getUserId(context)
+          return await context.prisma.comment.create({
+            data: {
+              content: args.data.content,
+              author: {
+                connect: {
+                  id: userId,
+                },
+              },
+              post: {
+                connect: {
+                  id: args.data.postId,
+                },
+              },
+            },
+          })
+        } catch (error) {
+          console.log({ error })
+        }
+      },
+    })
   },
 })
 
@@ -285,6 +342,46 @@ const Post = objectType({
           .author()
       },
     })
+    t.list.field('comments', {
+      type: 'Comment',
+      resolve: (parent, _, context: Context) => {
+        return context.prisma.post
+          .findUnique({
+            where: { id: parent.id || undefined },
+          })
+          .comments()
+      },
+    })
+  },
+})
+
+const Comment = objectType({
+  name: 'Comment',
+  definition(t) {
+    t.nonNull.int('id')
+    t.nonNull.field('createdAt', { type: 'DateTime' })
+    t.nonNull.field('updatedAt', { type: 'DateTime' })
+    t.nonNull.string('content')
+    t.field('post', {
+      type: 'Post',
+      resolve: (parent, _, context: Context) => {
+        return context.prisma.comment
+          .findUnique({
+            where: { id: parent.id || undefined },
+          })
+          .post()
+      },
+    })
+    t.field('author', {
+      type: 'User',
+      resolve: (parent, _, context: Context) => {
+        return context.prisma.comment
+          .findUnique({
+            where: { id: parent.id || undefined },
+          })
+          .author()
+      },
+    })
   },
 })
 
@@ -316,6 +413,14 @@ const PostCreateInput = inputObjectType({
   },
 })
 
+const CommentCreateInput = inputObjectType({
+  name: 'CommentCreateInput',
+  definition(t) {
+    t.nonNull.string('content')
+    t.nonNull.int('postId')
+  },
+})
+
 const UserCreateInput = inputObjectType({
   name: 'UserCreateInput',
   definition(t) {
@@ -339,10 +444,12 @@ const schemaWithoutPermissions = makeSchema({
     Mutation,
     Post,
     User,
+    Comment,
     AuthPayload,
     UserUniqueInput,
     UserCreateInput,
     PostCreateInput,
+    CommentCreateInput,
     SortOrder,
     PostOrderByUpdatedAtInput,
     DateTime,

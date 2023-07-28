@@ -7,12 +7,27 @@ type AuthPayload {
   user: User
 }
 
+type Comment {
+  author: User
+  content: String!
+  createdAt: DateTime!
+  id: Int!
+  post: Post
+  updatedAt: DateTime!
+}
+
+input CommentCreateInput {
+  content: String!
+  postId: Int!
+}
+
 """
 A date-time string at UTC, such as 2007-12-03T10:15:30Z, compliant with the `date-time` format outlined in section 5.6 of the RFC 3339 profile of the ISO 8601 standard for representation of dates and times using the Gregorian calendar.
 """
 scalar DateTime
 
 type Mutation {
+  createComment(data: CommentCreateInput!): Comment
   createDraft(data: PostCreateInput!): Post
   deletePost(id: Int!): Post
   incrementPostViewCount(id: Int!): Post
@@ -23,6 +38,7 @@ type Mutation {
 
 type Post {
   author: User
+  comments: [Comment]
   content: String
   createdAt: DateTime!
   id: Int!
@@ -43,6 +59,8 @@ input PostOrderByUpdatedAtInput {
 
 type Query {
   allUsers: [User!]!
+  commentByAuthorId(id: Int): Comment
+  commentByPostId(id: Int): Comment
   draftsByUser(userUniqueInput: UserUniqueInput!): [Post]
   feed(orderBy: PostOrderByUpdatedAtInput, searchString: String, skip: Int, take: Int): [Post!]!
   me: User
