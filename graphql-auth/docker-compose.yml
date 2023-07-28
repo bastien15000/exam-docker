@@ -22,7 +22,7 @@ services:
         ]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 3
 
   app:
     build:
@@ -47,4 +47,14 @@ services:
         ]
       interval: 10s
       timeout: 5s
-      retries: 10
+      retries: 3
+
+    app_prod:
+      image: mon_utilisateur/graphql-auth:0.2
+      container_name: my_app_prod
+      ports:
+        - "3000:3000"
+      environment:
+        - NODE_ENV=production
+      depends_on:
+        - mariadb
